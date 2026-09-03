@@ -102,7 +102,7 @@ export function ErrorState({ title = 'Something went wrong', description = 'Plea
   );
 }
 
-export function Table({ columns = [], rows = [], emptyTitle = 'No records available', emptyDescription = 'There are no records to display right now.' }) {
+export function Table({ columns = [], rows = [], emptyTitle = 'No records available', emptyDescription = 'There are no records to display right now.', onRowClick }) {
   if (!rows.length) {
     return (
       <EmptyState title={emptyTitle} description={emptyDescription} />
@@ -121,7 +121,15 @@ export function Table({ columns = [], rows = [], emptyTitle = 'No records availa
         </thead>
         <tbody>
           {rows.map((row, rowIndex) => (
-            <tr key={row.id ?? rowIndex}>
+            <tr
+              key={row.id ?? rowIndex}
+              {...(onRowClick
+                ? {
+                  onClick: () => onRowClick(row, rowIndex),
+                  style: { cursor: 'pointer' },
+                }
+                : {})}
+            >
               {columns.map((column) => (
                 <td key={`${row.id ?? rowIndex}-${column.key}`}>
                   {column.render ? column.render(row[column.key], row) : row[column.key] ?? '—'}

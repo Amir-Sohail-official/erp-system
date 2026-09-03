@@ -8,7 +8,14 @@ const app = express();
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL ?? 'http://localhost:5173',
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+        return callback(null, true);
+      }
+      const configured = process.env.CLIENT_URL ?? 'http://localhost:5173';
+      return callback(null, configured);
+    },
     credentials: true,
   }),
 );

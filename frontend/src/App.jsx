@@ -17,8 +17,8 @@ function App() {
   const [loginError, setLoginError] = useState("");
   const [route, setRoute] = useState(getCurrentPath());
   const [credentials, setCredentials] = useState({
-    email: "admin@erp.local",
-    password: "",
+    email: "admin@erp.com",
+    password: "password123",
   });
 
   useEffect(() => {
@@ -123,7 +123,7 @@ function App() {
                   email: event.target.value,
                 }))
               }
-              placeholder="admin@erp.local"
+              placeholder="admin@erp.com"
             />
 
             <Input

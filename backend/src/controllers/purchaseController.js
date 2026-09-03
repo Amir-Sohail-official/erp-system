@@ -39,28 +39,59 @@ export const listPurchases = async (req, res, next) => {
     const sortBy = req.query.sortBy || 'createdAt';
     const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
 
-    const query = {};
-    if (search) {
-      query.$or = [
-        { purchaseNumber: { $regex: search, $options: 'i' } },
-      ];
-    }
+    const matchStage = {};
     if (supplierId && supplierId !== 'all') {
-      query.supplier = supplierId;
+      matchStage.supplier = new mongoose.Types.ObjectId(supplierId);
     }
     if (paymentStatus && paymentStatus !== 'all') {
-      query.paymentStatus = paymentStatus;
+      matchStage.paymentStatus = paymentStatus;
     }
 
-    const [purchases, total] = await Promise.all([
-      Purchase.find(query)
-        .populate('supplier', 'name email phone')
-        .sort({ [sortBy]: sortOrder })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      Purchase.countDocuments(query),
-    ]);
+    const supplierMatchStage = {};
+    if (search) {
+      const searchRegex = { $regex: search, $options: 'i' };
+      matchStage.$or = [
+        { purchaseNumber: searchRegex },
+      ];
+      supplierMatchStage.$or = [
+        { 'supplier.name': searchRegex },
+        { 'supplier.email': searchRegex },
+        { 'supplier.phone': searchRegex },
+      ];
+    }
+
+    const pipeline = [
+      { $lookup: { from: 'suppliers', localField: 'supplier', foreignField: '_id', as: 'supplier' } },
+      { $unwind: { path: '$supplier', preserveNullAndEmptyArrays: true } },
+      ...(Object.keys(supplierMatchStage).length
+        ? [{
+          $match: {
+            $or: [
+              ...(matchStage.$or || []),
+              ...supplierMatchStage.$or,
+            ],
+            ...Object.fromEntries(Object.entries(matchStage).filter(([key]) => key !== '$or')),
+          },
+        }]
+        : Object.keys(matchStage).length ? [{ $match: matchStage }] : []),
+      { $sort: { [sortBy]: sortOrder } },
+      { $facet: {
+        meta: [{ $count: 'total' }],
+        items: [{ $skip: skip }, { $limit: limit }],
+      } },
+    ];
+
+    const [faceted] = await Purchase.aggregate(pipeline);
+    const total = faceted?.meta?.[0]?.total || 0;
+    const purchases = (faceted?.items || []).map((purchase) => ({
+      ...purchase,
+      supplier: purchase.supplier ? {
+        _id: purchase.supplier._id,
+        name: purchase.supplier.name,
+        email: purchase.supplier.email,
+        phone: purchase.supplier.phone,
+      } : null,
+    }));
 
     return res.status(200).json(successResponse({
       items: purchases,

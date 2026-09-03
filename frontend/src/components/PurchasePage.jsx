@@ -40,6 +40,11 @@ export function PurchasePage({ user, route, navigate }) {
       const response = await axios.get(`${API_URL}/suppliers`, { headers: getAuthHeaders() });
       setSuppliers(response.data?.data?.items || []);
     } catch (error) {
+      if (error?.response?.status === 401) {
+        localStorage.removeItem('erp_token');
+        window.location.href = '/';
+        return;
+      }
       console.error('Unable to load suppliers', error);
     }
   };
@@ -49,6 +54,11 @@ export function PurchasePage({ user, route, navigate }) {
       const response = await axios.get(`${API_URL}/products?limit=200`, { headers: getAuthHeaders() });
       setProducts(response.data?.data?.items || []);
     } catch (error) {
+      if (error?.response?.status === 401) {
+        localStorage.removeItem('erp_token');
+        window.location.href = '/';
+        return;
+      }
       console.error('Unable to load products', error);
     }
   };
@@ -69,6 +79,12 @@ export function PurchasePage({ user, route, navigate }) {
       setTotalPages(payload.pagination?.totalPages || 1);
       setError('');
     } catch (err) {
+      const status = err?.response?.status;
+      if (status === 401) {
+        localStorage.removeItem('erp_token');
+        window.location.href = '/';
+        return;
+      }
       setError(err?.response?.data?.message || 'Unable to load purchases');
     } finally {
       setLoading(false);
@@ -491,6 +507,7 @@ export function PurchasePage({ user, route, navigate }) {
                 paymentStatus: purchaseRecord.paymentStatus,
                 createdAt: purchaseRecord.createdAt,
               }))}
+              onRowClick={(row) => navigate(`/purchases/${row.id}`)}
             />
             <Pagination page={page} totalPages={totalPages} onChange={(nextPage) => { setPage(nextPage); fetchPurchases(nextPage); }} />
           </>
