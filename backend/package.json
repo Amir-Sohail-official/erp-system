@@ -1,0 +1,21 @@
+{
+  "name": "erp-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js",
+    "start:fixed": "cross-env PORT=5005 CLIENT_URL=http://localhost:5173 node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.6",
+    "cross-env": "^10.0.0",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.24.4",
+    "zod": "^4.5.4"
+  }
+}

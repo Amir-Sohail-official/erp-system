@@ -1,0 +1,27 @@
+# Node
+node_modules/
+.npm/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Local MongoDB development data
+.mongodb/
+
+# Build output
+build/
+dist/
+.next/
+out/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
