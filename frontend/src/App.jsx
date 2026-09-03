@@ -1,37 +1,37 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
-import { ERPLayout } from './components/ERPLayout.jsx';
-import { Button, Input } from './components/ui.jsx';
+import { ERPLayout } from "./components/ERPLayout.jsx";
+import { Button, Input } from "./components/ui.jsx";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5005/api";
 
 function getCurrentPath() {
-  return window.location.pathname || '/';
+  return window.location.pathname || "/";
 }
 
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [loginError, setLoginError] = useState('');
+  const [loginError, setLoginError] = useState("");
   const [route, setRoute] = useState(getCurrentPath());
   const [credentials, setCredentials] = useState({
-    email: 'admin@erp.local',
-    password: 'admin123456',
+    email: "admin@erp.local",
+    password: "",
   });
 
   useEffect(() => {
     const handleRouteChange = () => setRoute(getCurrentPath());
-    window.addEventListener('popstate', handleRouteChange);
+    window.addEventListener("popstate", handleRouteChange);
 
     return () => {
-      window.removeEventListener('popstate', handleRouteChange);
+      window.removeEventListener("popstate", handleRouteChange);
     };
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('erp_token');
+    const token = localStorage.getItem("erp_token");
 
     if (!token) {
       setLoading(false);
@@ -46,7 +46,7 @@ function App() {
         setUser(response.data.data);
       })
       .catch(() => {
-        localStorage.removeItem('erp_token');
+        localStorage.removeItem("erp_token");
       })
       .finally(() => {
         setLoading(false);
@@ -54,42 +54,42 @@ function App() {
   }, []);
 
   const navigate = (nextPath) => {
-    window.history.pushState({}, '', nextPath);
+    window.history.pushState({}, "", nextPath);
     setRoute(nextPath);
   };
 
   const handleLogin = async (event) => {
     event.preventDefault();
     setIsLoggingIn(true);
-    setLoginError('');
+    setLoginError("");
 
     try {
       const response = await axios.post(`${API_URL}/auth/login`, credentials);
       const token = response.data?.data?.token;
 
       if (!token) {
-        throw new Error('Login response missing token');
+        throw new Error("Login response missing token");
       }
 
-      localStorage.setItem('erp_token', token);
+      localStorage.setItem("erp_token", token);
 
       const profileResponse = await axios.get(`${API_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       setUser(profileResponse.data.data);
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (error) {
-      setLoginError(error?.response?.data?.message || 'Login failed');
+      setLoginError(error?.response?.data?.message || "Login failed");
     } finally {
       setIsLoggingIn(false);
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('erp_token');
+    localStorage.removeItem("erp_token");
     setUser(null);
-    navigate('/');
+    navigate("/");
   };
 
   if (loading) {
@@ -117,7 +117,12 @@ function App() {
               label="Email"
               type="email"
               value={credentials.email}
-              onChange={(event) => setCredentials((current) => ({ ...current, email: event.target.value }))}
+              onChange={(event) =>
+                setCredentials((current) => ({
+                  ...current,
+                  email: event.target.value,
+                }))
+              }
               placeholder="admin@erp.local"
             />
 
@@ -125,14 +130,19 @@ function App() {
               label="Password"
               type="password"
               value={credentials.password}
-              onChange={(event) => setCredentials((current) => ({ ...current, password: event.target.value }))}
+              onChange={(event) =>
+                setCredentials((current) => ({
+                  ...current,
+                  password: event.target.value,
+                }))
+              }
               placeholder="••••••••"
             />
 
             {loginError ? <div className="erp-alert">{loginError}</div> : null}
 
             <Button type="submit" disabled={isLoggingIn}>
-              {isLoggingIn ? 'Signing in...' : 'Login'}
+              {isLoggingIn ? "Signing in..." : "Login"}
             </Button>
           </form>
         </div>
@@ -140,7 +150,14 @@ function App() {
     );
   }
 
-  return <ERPLayout user={user} route={route} navigate={navigate} onLogout={handleLogout} />;
+  return (
+    <ERPLayout
+      user={user}
+      route={route}
+      navigate={navigate}
+      onLogout={handleLogout}
+    />
+  );
 }
 
 export default App;

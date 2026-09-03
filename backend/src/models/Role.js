@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const roleSchema = new mongoose.Schema(
   {
@@ -7,12 +7,21 @@ const roleSchema = new mongoose.Schema(
       required: true,
       unique: true,
       trim: true,
-      enum: ['Admin', 'Manager', 'Salesman', 'Inventory Manager', 'Accountant'],
+      enum: [
+        "Admin",
+        "Manager",
+        "Salesman",
+        "Inventory Manager",
+        "Purchase Officer",
+        "Accountant",
+      ],
     },
+
     description: {
       type: String,
-      default: '',
+      default: "",
     },
+
     permissions: {
       type: [String],
       default: [],
@@ -23,4 +32,4 @@ const roleSchema = new mongoose.Schema(
   },
 );
 
-export default mongoose.model('Role', roleSchema);
+export default mongoose.model("Role", roleSchema);
