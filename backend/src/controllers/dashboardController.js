@@ -74,7 +74,15 @@ const getDateBucket = (value) => new Date(value).toISOString().slice(0, 10);
 
 export const getDashboard = async (req, res, next) => {
   try {
+    // 1. Boundaries for "Today's" metrics (Top cards)
     const { start, end } = getDateBoundaries();
+
+    // 2. Boundaries for Trend charts (e.g., Last 7 Days)
+    const trendEnd = new Date();
+    trendEnd.setHours(23, 59, 59, 999);
+    const trendStart = new Date();
+    trendStart.setDate(trendStart.getDate() - 7); // Change to -30 for a 30-day trend
+    trendStart.setHours(0, 0, 0, 0);
 
     const [
       productCount,
@@ -98,6 +106,8 @@ export const getDashboard = async (req, res, next) => {
       Product.find({ $expr: { $lte: ["$stock", "$minimumStock"] } })
         .select("name stock minimumStock")
         .lean(),
+
+      // ✅ Today's Sales Summary (Keep using start, end)
       Sale.aggregate([
         {
           $match: {
@@ -113,6 +123,8 @@ export const getDashboard = async (req, res, next) => {
           },
         },
       ]),
+
+      // ✅ Today's Purchase Summary (Keep using start, end)
       Purchase.aggregate([
         {
           $match: {
@@ -128,16 +140,19 @@ export const getDashboard = async (req, res, next) => {
           },
         },
       ]),
+
       Sale.aggregate([
         { $match: { status: { $ne: "CANCELLED" } } },
         {
           $group: { _id: null, totalOutstanding: { $sum: "$remainingAmount" } },
         },
       ]),
+
+      // ✅ Sales By Day Trend (UPDATED to use trendStart, trendEnd)
       Sale.aggregate([
         {
           $match: {
-            createdAt: { $gte: start, $lte: end },
+            createdAt: { $gte: trendStart, $lte: trendEnd }, // <--- CHANGED
             status: { $ne: "CANCELLED" },
           },
         },
@@ -150,6 +165,7 @@ export const getDashboard = async (req, res, next) => {
         },
         { $sort: { _id: 1 } },
       ]),
+
       Sale.aggregate([
         {
           $match: {
@@ -169,6 +185,7 @@ export const getDashboard = async (req, res, next) => {
         },
         { $sort: { _id: 1 } },
       ]),
+
       SaleItem.aggregate([
         {
           $lookup: {
@@ -190,6 +207,7 @@ export const getDashboard = async (req, res, next) => {
         { $sort: { totalRevenue: -1 } },
         { $limit: 5 },
       ]),
+
       SaleItem.aggregate([
         {
           $lookup: {
@@ -218,10 +236,12 @@ export const getDashboard = async (req, res, next) => {
         },
         { $sort: { totalRevenue: -1 } },
       ]),
+
+      // ✅ Purchase By Date Trend (UPDATED to use trendStart, trendEnd)
       Purchase.aggregate([
         {
           $match: {
-            createdAt: { $gte: start, $lte: end },
+            createdAt: { $gte: trendStart, $lte: trendEnd }, // <--- CHANGED
             status: { $ne: "CANCELLED" },
           },
         },
@@ -234,6 +254,7 @@ export const getDashboard = async (req, res, next) => {
         },
         { $sort: { _id: 1 } },
       ]),
+
       Purchase.aggregate([
         { $match: { status: { $ne: "CANCELLED" } } },
         {
@@ -255,6 +276,7 @@ export const getDashboard = async (req, res, next) => {
         { $sort: { totalPurchases: -1 } },
         { $limit: 10 },
       ]),
+
       Product.aggregate([
         {
           $group: {
@@ -265,6 +287,8 @@ export const getDashboard = async (req, res, next) => {
         },
       ]),
     ]);
+
+    // ... (The rest of your getDashboard function remains exactly the same)
 
     const latestPurchaseCostByProduct = await PurchaseItem.aggregate([
       { $sort: { createdAt: -1 } },
